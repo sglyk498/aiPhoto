@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Student Photo-Taking</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" media="screen" rel="stylesheet" type="text/css">
+
+  <style>
+    /* Spinner Wrapper */
+    .loader {
+      width: 100vw;
+      height: 100vh;
+      background: #fff;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }  
+    .loader-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    /* Spinner */
+    .lds-roller {
+      display: inline-block;
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    .lds-roller div {
+      animation: lds-roller 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      transform-origin: 32px 32px;
+    }
+    .lds-roller div:after {
+      content: " ";
+      display: block;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #333;
+      margin: -3px 0 0 -3px;
+    }
+    .lds-roller div:nth-child(1) {
+      animation-delay: -0.036s;
+    }
+    .lds-roller div:nth-child(1):after {
+      top: 50px;
+      left: 50px;
+    }
+    .lds-roller div:nth-child(2) {
+      animation-delay: -0.072s;
+    }
+    .lds-roller div:nth-child(2):after {
+      top: 54px;
+      left: 45px;
+    }
+    .lds-roller div:nth-child(3) {
+      animation-delay: -0.108s;
+    }
+    .lds-roller div:nth-child(3):after {
+      top: 57px;
+      left: 39px;
+    }
+    .lds-roller div:nth-child(4) {
+      animation-delay: -0.144s;
+    }
+    .lds-roller div:nth-child(4):after {
+      top: 58px;
+      left: 32px;
+    }
+    .lds-roller div:nth-child(5) {
+      animation-delay: -0.18s;
+    }
+    .lds-roller div:nth-child(5):after {
+      top: 57px;
+      left: 25px;
+    }
+    .lds-roller div:nth-child(6) {
+      animation-delay: -0.216s;
+    }
+    .lds-roller div:nth-child(6):after {
+      top: 54px;
+      left: 19px;
+    }
+    .lds-roller div:nth-child(7) {
+      animation-delay: -0.252s;
+    }
+    .lds-roller div:nth-child(7):after {
+      top: 50px;
+      left: 14px;
+    }
+    .lds-roller div:nth-child(8) {
+      animation-delay: -0.288s;
+    }
+    .lds-roller div:nth-child(8):after {
+      top: 45px;
+      left: 10px;
+    }
+    @keyframes lds-roller {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    .row.display-flex {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .row.display-flex > [class*='col-'] {
+      flex-grow: 1;
+    } 
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+</head>
+
+<body>
+  <div class="container-fluid pt-4">
+    <div class="row display-flex">
+      <div class="col-5 text-center my-auto">
+        <div class="mx-auto" style="width:480px;height:480px;background-color:#fff;">
+          <video class="input_video" style="display:none"></video>
+          <canvas id="canvas" width="480px" height="480px"></canvas> 
+        </div>
+        <div class="pt-2">
+          <button class="btn btn-secondary" onclick="state=!state;">Switch Background</button>
+          <span style="padding-right:30px;"></span>
+          <button class="btn btn-secondary" id="selfieBtn">Switch Camera</button>
+          <span style="padding-right:30px;"></span>
+          <button class="btn btn-success" id="takePhotoBtn">Take Photo</button>
+        </div>
+      </div>
+      
+      <div class="col-2 my-auto">
+        <div width=240px height=320px>             
+          <img id="cropImg" src="blackPerson.jpg" width=240px height=320px class="border border-primary shadow-lg"> 
+        </div>
+        <div class="pt-2">
+          <a id="downloadImg" class="btn btn-primary" download='myNRIC.jpg'>Download Photo</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="loader text-center">
+      <div class="loader-inner">
+        <div class="h2 pb-5 font-weight-bold text-primary">AI Student Photo-Taking Application</div>
+          <!-- Animated Spinner -->
+          <div class="lds-roller mb-3">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>       
+          <!-- Spinner Description Text [For Demo Purpose]-->
+          <h4>Loading...</h4>
+        </div>
+      </div>
+ 
+  </div>
+</body>
+</html>
+
+<script>
+  const videoElement = document.getElementsByClassName('input_video')[0];
+  const canvas = document.getElementById('canvas');
+  const Ctx = canvas.getContext('2d');
+  const downloadImg = document.getElementById('downloadImg');
+  
+  var state = true;
+  var selfie = true;
+  var cropper;
+
+  $(function () {
+    $("#takePhotoBtn").click(function () {
+      var cropImg = canvas.cropper.getCroppedCanvas().toDataURL("image/jpeg",1);
+      $('#cropImg').attr('src', cropImg);
+         
+      downloadImg.href = $('#cropImg').attr('src');
+    });
+
+    $("#selfieBtn").click(function () {
+      videoElement.classList.toggle('selfie', selfie);
+    });
+
+    function onResults(results) {
+      $('.loader').hide();
+      Ctx.clearRect(0, 0, canvas.width, canvas.height);
+      Ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
+    
+      Ctx.globalCompositeOperation = 'source-out';
+      Ctx.fillStyle = '#FFFFFF';
+      Ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      if (state==false) {
+    	 Ctx.globalCompositeOperation = 'source-over';
+      } else {
+        Ctx.globalCompositeOperation = 'destination-atop';
+      }
+      Ctx.drawImage(
+        results.image, 0, 0, canvas.width, canvas.height);
+        if (cropper == null)
+        {
+          cropper = new Cropper(canvas,{
+                          cropBoxResizable:false,
+                          autoCropArea: 0,
+                          strict: false,
+                          guides: false,
+                          highlight: false,
+                          dragCrop: false,
+                          zoomable: false,
+                          zoomOnTouch: false,
+                          zoomOnWheel: false,
+                          viewMode: 3,
+                          dragMode: "move",
+                          ready: function () {
+                            cropper.setCropBoxData({ width: 240, height: 320 });
+                          },
+                          crop: function (event) {
+/*                               
+                            console.log(event.detail);
+                            $("#x").val(event.detail.x);
+                            $("#y").val(event.detail.y);
+                            $("#Width").val(event.detail.width);
+                            $("#Height").val(event.detail.height);
+*/                           
+                          }
+    
+    
+            });
+          } else
+          {
+            cropper.replace(canvas.toDataURL(),true);      
+          }
+    }
+    
+    const selfieSegmentation = new SelfieSegmentation({locateFile: (file) => {  
+      return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
+    }});
+    
+    selfieSegmentation.setOptions({
+      modelSelection: 1,
+    });
+    
+    selfieSegmentation.onResults(onResults);
+    
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await selfieSegmentation.send({image: videoElement});  
+      },
+      width: 480,
+      height: 480
+    });
+    
+    camera.start();
+
+  });
+
+</script>
