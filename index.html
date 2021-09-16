@@ -8,6 +8,19 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" media="screen" rel="stylesheet" type="text/css">
 
   <style>
+
+    .input_video {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      & .selfie {
+        transform: scale(-1, 1);
+      }
+    }
+
     /* Spinner Wrapper */
     .loader {
       width: 100vw;
@@ -154,21 +167,22 @@
     <div class="loader text-center">
       <div class="loader-inner">
         <div class="h2 pb-5 font-weight-bold text-primary">AI Student Photo-Taking Application</div>
-          <!-- Animated Spinner -->
-          <div class="lds-roller mb-3">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-          </div>       
-          <!-- Spinner Description Text [For Demo Purpose]-->
-          <h4>Loading...</h4>
-        </div>
+        <!-- Animated Spinner -->
+        <div class="lds-roller mb-3">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>       
+        <!-- Spinner Description Text [For Demo Purpose]-->
+        <h4><em>Loading...</em></h4>
+        <div class="h5 pt-5 text-primary"><em>Recommend to run on Google Chrome.</em></div>
       </div>
+    </div>
  
   </div>
 </body>
@@ -180,6 +194,7 @@
   const Ctx = canvas.getContext('2d');
   const downloadImg = document.getElementById('downloadImg');
   
+  var selfieMode = true;
   var state = true;
   var selfie = true;
   var cropper;
@@ -192,8 +207,17 @@
       downloadImg.href = $('#cropImg').attr('src');
     });
 
-    $("#selfieBtn").click(function () {
-      videoElement.classList.toggle('selfie', selfie);
+    $("#selfieBtn").click(function () {   
+      if (selfieMode == true) {
+        selfieMode = false;
+      } else        
+      {
+        selfieMode = true;
+      }
+          
+      videoElement.classList.toggle("selfie",selfieMode);    
+      selfieSegmentation.setOptions({selfieMode : selfieMode});
+    
     });
 
     function onResults(results) {
@@ -253,6 +277,7 @@
     
     selfieSegmentation.setOptions({
       modelSelection: 1,
+      selfieMode: selfieMode
     });
     
     selfieSegmentation.onResults(onResults);
